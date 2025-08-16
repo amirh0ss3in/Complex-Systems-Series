@@ -4,9 +4,8 @@ class HookScene3D(ThreeDScene):
     def construct(self):
         # --- Create the 3D Sky Sphere ---
         sky_sphere = Sphere(radius=100, resolution=(100, 200))
-        sky_sphere.flip() # Flip normals to see the texture from the inside
+        sky_sphere.flip()
 
-        # NOTE: Make sure you have these files in an 'assets' folder
         skybox = TexturedSurface(sky_sphere, "assets/high_res_stars.tif")
         skybox_with_mountain = TexturedSurface(sky_sphere, "assets/high_res_stars_with_mountain.tif")
 
@@ -23,31 +22,42 @@ class HookScene3D(ThreeDScene):
         earth.add_updater(lambda m, dt: m.rotate(0.05 * dt, axis=UP))
         self.wait(2)
         
-        # --- PART 1: The Zoom to Earth ---
-        self.play(
-            frame.animate.set_height(2.5).move_to(RIGHT * 1.5 + OUT * 0.5).increment_theta(-30 * DEGREES), 
-            run_time=6
-        )
+        # --- Animations ---
+        self.play(frame.animate.set_height(2.5).move_to(RIGHT * 1.5 + OUT * 0.5).increment_theta(-30 * DEGREES), run_time=6)
         earth.clear_updaters()
-        
-        self.play(
-            frame.animate.set_height(3.5).move_to(RIGHT * 10).increment_theta(-50 * DEGREES).increment_gamma(60 * DEGREES).increment_phi(10 * DEGREES),
-            run_time=4,
-            rate_func=smooth
-        )
+        self.play(frame.animate.set_height(3.5).move_to(RIGHT * 10).increment_theta(-50 * DEGREES).increment_gamma(60 * DEGREES).increment_phi(10 * DEGREES), run_time=4, rate_func=smooth)
         self.wait(1)
-
-        # --- PART 2: The Seamless Swap ---
         self.remove(skybox)
         self.add(skybox_with_mountain)
         self.remove(earth)
         self.wait(0.1)
         self.play(frame.animate.increment_gamma(-130*DEGREES), run_time=5)
         self.play(frame.animate.increment_theta(50*DEGREES).shift(-15*UP), run_time=5)
-
-        self.play(
-            FadeOut(skybox_with_mountain)
-        )
-
-        # Hold the black screen for a moment before the scene ends
+        
         self.wait(1)
+
+
+class HookScene_End(Scene):
+    def construct(self):
+        image_path = "videos/HookScene3D.png" # Using forward slash is safer in code
+
+        try:
+            background = ImageMobject(image_path)
+            background.set_height(FRAME_HEIGHT) # Scale image to fit the screen
+            self.add(background)
+        except FileNotFoundError:
+            error_message = Text(f"ERROR: Still cannot find the image!\nLooked for: {image_path}", color=RED, font_size=36)
+            self.add(error_message)
+            self.wait(3)
+            return
+
+        title = Text("The Journey's End", font_size=72, color=WHITE)
+        title.to_edge(UP)
+
+        subtitle = Text("A new perspective.", font_size=48, color=YELLOW)
+        subtitle.next_to(title, DOWN, buff=0.5)
+
+        self.play(Write(title))
+        self.wait(1)
+        self.play(FadeIn(subtitle, shift=DOWN))
+        self.wait(3)
