@@ -1,6 +1,8 @@
 from manimlib import *
 from PIL import Image
 import os  
+import cv2
+import numpy as np
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -60,28 +62,96 @@ class HookScene3D(ThreeDScene):
         
         self.wait(1)
 
+# --- NEW Helper Function for Reading the Edge from a Mask ---
+def get_skyline_from_mask(mask_image_path):
+    """
+    Finds the skyline by reading the first non-white pixel in each column of a mask image.
+    This is much more reliable than edge detection if a mask is available.
+    
+    Returns:
+        - A list of (x, y) pixel coordinates for the skyline.
+        - The width of the image.
+        - The height of the image.
+    """
+    try:
+        # 1. Load the mask image
+        image = cv2.imread(mask_image_path)
+        if image is None:
+            print(f"Error: Could not read mask image at {mask_image_path}")
+            return None, None, None
+            
+        # Convert to grayscale. White will be 255, everything else will be less.
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        img_height, img_width = gray.shape
+
+        # 2. Find the top-most non-white pixel for each column
+        skyline_points = []
+        # Default to the bottom of the image in case a column is entirely white
+        last_y = img_height - 1 
+
+        for x in range(img_width):
+            column = gray[:, x]
+            # Find the index of the first pixel that is NOT white (value < 255)
+            search_result = np.argmax(column < 255)
+            
+            # If a non-white pixel was found (and it's not the very first pixel of an
+            # all-white column), update our y-coordinate.
+            if search_result > 0:
+                last_y = search_result
+            # If the entire column is white, np.argmax returns 0. We check if the
+            # pixel at (0,x) is actually part of the mountain. If not, we reuse last_y.
+            elif gray[0, x] >= 255: # This column is all white
+                pass # last_y is already correct from the previous column
+            else: # The mountain starts at the very top of the image in this column
+                last_y = 0
+
+            skyline_points.append((x, last_y))
+
+        return skyline_points, img_width, img_height
+
+    except Exception as e:
+        print(f"An error occurred during image processing: {e}")
+        return None, None, None
 
 class HookScene_End(Scene):
     def construct(self):
-        image_path = "videos/HookScene3D.png" 
-
+        background_image_path = "videos/HookScene3D.png" 
+        mask_image_path = "assets/HookScene3D_edge.png"
         try:
-            background = ImageMobject(image_path)
+            background = ImageMobject(background_image_path)
             background.set_height(FRAME_HEIGHT)
             self.add(background)
         except FileNotFoundError:
-            error_message = Text(f"ERROR: Still cannot find the image!\nLooked for: {image_path}", color=RED, font_size=36)
+            error_message = Text(f"ERROR: Cannot find background image!\nLooked for: {background_image_path}", color=RED, font_size=36)
             self.add(error_message)
             self.wait(3)
             return
 
-        title = Text("The Journey's End", font_size=72, color=WHITE)
-        title.to_edge(UP)
+        # 1. Get the skyline points from your NEW mask image
+        pixel_points, img_width, img_height = get_skyline_from_mask(mask_image_path)
 
-        subtitle = Text("A new perspective.", font_size=48, color=YELLOW)
-        subtitle.next_to(title, DOWN, buff=0.5)
+        if not pixel_points:
+            print("Could not process the mask image. Exiting animation.")
+            return
 
-        self.play(Write(title))
-        self.wait(1)
-        self.play(FadeIn(subtitle, shift=DOWN))
-        self.wait(3)
+        # 2. Convert pixel coordinates to Manim coordinates
+        manim_points = []
+        for px, py in pixel_points:
+            manim_x = (px / img_width) * FRAME_WIDTH - (FRAME_WIDTH / 2)
+            manim_y = (FRAME_HEIGHT / 2) - (py / img_height) * FRAME_HEIGHT
+            manim_points.append(np.array([manim_x, manim_y, 0]))
+
+        # 3. Create and smooth the Manim line
+        skyline = VMobject(stroke_color=WHITE, stroke_width=2)
+        skyline.set_points_as_corners(manim_points)
+        skyline.make_smooth()
+        
+        
+        # 4. Animate the line being drawn
+        self.play(
+            FadeOut(background),
+            ShowCreation(skyline),
+            run_time=3
+        )
+
+        self.wait(2)
