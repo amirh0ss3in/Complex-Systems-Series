@@ -113,45 +113,107 @@ def get_skyline_from_mask(mask_image_path):
         print(f"An error occurred during image processing: {e}")
         return None, None, None
 
+def add_fractal_detail_recursive(points, roughness, max_iterations):
+    """
+    A more robust recursive midpoint displacement function.
+    It now displaces perpendicularly to the segment connecting the two points.
+    """
+    if max_iterations == 0:
+        return points
+
+    new_points = [points[0]]
+    for i in range(len(points) - 1):
+        p1 = points[i]
+        p2 = points[i+1]
+        
+        midpoint = (p1 + p2) / 2
+        
+        # Vector from p1 to p2
+        vec = p2 - p1
+        dist = np.linalg.norm(vec)
+        
+        if dist < 1e-9: # If points are too close, don't displace
+            new_points.append(p2)
+            continue
+            
+        # Perpendicular vector in 2D
+        perp_vec = np.array([-vec[1], vec[0], 0])
+        
+        # Random displacement
+        displacement = (np.random.random() - 0.5) * dist * roughness
+        
+        displaced_midpoint = midpoint + (displacement / np.linalg.norm(perp_vec)) * perp_vec
+        
+        new_points.append(displaced_midpoint)
+        new_points.append(p2)
+        
+    return add_fractal_detail_recursive(new_points, roughness, max_iterations - 1)
+
+
 class HookScene_End(Scene):
     def construct(self):
+        # ==========================================================
+        # PART 1: Trace the "Real" Mountain 
+        # ==========================================================
         background_image_path = "videos/HookScene3D.png" 
         mask_image_path = "assets/HookScene3D_edge.png"
+
         try:
             background = ImageMobject(background_image_path)
             background.set_height(FRAME_HEIGHT)
             self.add(background)
-        except FileNotFoundError:
-            error_message = Text(f"ERROR: Cannot find background image!\nLooked for: {background_image_path}", color=RED, font_size=36)
-            self.add(error_message)
-            self.wait(3)
+        except Exception as e:
+            print(f"Error loading background image: {e}")
+            self.add(Text("Error: Background image not found!", color=RED))
             return
 
-        # 1. Get the skyline points from your NEW mask image
         pixel_points, img_width, img_height = get_skyline_from_mask(mask_image_path)
-
         if not pixel_points:
-            print("Could not process the mask image. Exiting animation.")
+            print("Failed to get skyline from mask.")
             return
 
-        # 2. Convert pixel coordinates to Manim coordinates
-        manim_points = []
+        traced_manim_points = []
         for px, py in pixel_points:
             manim_x = (px / img_width) * FRAME_WIDTH - (FRAME_WIDTH / 2)
             manim_y = (FRAME_HEIGHT / 2) - (py / img_height) * FRAME_HEIGHT
-            manim_points.append(np.array([manim_x, manim_y, 0]))
+            traced_manim_points.append(np.array([manim_x, manim_y, 0]))
 
-        # 3. Create and smooth the Manim line
-        skyline = VMobject(stroke_color=WHITE, stroke_width=2)
-        skyline.set_points_as_corners(manim_points)
-        skyline.make_smooth()
+        np.random.seed(123) # Seed for reproducibility
+
+        # Simplify the traced points to create a "base shape" for the fractal
+        # The number 20 here controls how closely it follows the original. Higher = less accurate but more "fractal".
+        base_points_for_fractal = traced_manim_points[::20] 
+
+        # Now, build ONE high-resolution fractal from this base shape
+        # 7 iterations gives plenty of detail for zooming.
+        # 0.5 is a good roughness value.
+        high_res_fractal_points = add_fractal_detail_recursive(base_points_for_fractal, 0.5, 7)
         
-        
-        # 4. Animate the line being drawn
+        skyline = VMobject(stroke_color=WHITE)
+        skyline.set_points_as_corners(high_res_fractal_points)
+        # We manually set the stroke width to be adaptive
+        skyline.add_updater(lambda m: m.set_stroke(width=2.5 * self.camera.frame.get_width() / FRAME_WIDTH))
+
+        # Animate the creation of this single, definitive fractal line
         self.play(
             FadeOut(background),
             ShowCreation(skyline),
             run_time=3
         )
+        self.wait(1)
 
+        # ==========================================================
+        # PART 2: The Zoom
+        # ==========================================================
+        
+        # Define a point on our line to zoom into
+        zoom_point = skyline.point_from_proportion(0.7) 
+
+        # Execute the zoom. The updater will handle the stroke width.
+        # Because we generated a high-res line, the detail will be there.
+        self.play(
+            self.camera.frame.animate.scale(0.01).move_to(zoom_point),
+            run_time=8,
+            rate_func=linear
+        )
         self.wait(2)
