@@ -26,13 +26,13 @@ class HookScene3D(ThreeDScene):
         # --- PART 1: The Zoom to Earth ---
         self.play(
             frame.animate.set_height(2.5).move_to(RIGHT * 1.5 + OUT * 0.5).increment_theta(-30 * DEGREES), 
-            run_time=2
+            run_time=6
         )
         earth.clear_updaters()
         
         self.play(
             frame.animate.set_height(3.5).move_to(RIGHT * 10).increment_theta(-50 * DEGREES).increment_gamma(60 * DEGREES).increment_phi(10 * DEGREES),
-            run_time=2,
+            run_time=4,
             rate_func=smooth
         )
         self.wait(1)
@@ -42,5 +42,12 @@ class HookScene3D(ThreeDScene):
         self.add(skybox_with_mountain)
         self.remove(earth)
         self.wait(0.1)
-        self.play(frame.animate.increment_gamma(-125*DEGREES).increment_theta(50*DEGREES).shift(10*UP))
-        self.embed()
+        self.play(frame.animate.increment_gamma(-130*DEGREES), run_time=5)
+        self.play(frame.animate.increment_theta(50*DEGREES).shift(-15*UP), run_time=5)
+
+        self.play(
+            FadeOut(skybox_with_mountain)
+        )
+
+        # Hold the black screen for a moment before the scene ends
+        self.wait(1)
