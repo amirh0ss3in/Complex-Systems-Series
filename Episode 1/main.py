@@ -62,7 +62,6 @@ class HookScene3D(ThreeDScene):
         
         self.wait(1)
 
-# --- NEW Helper Function for Reading the Edge from a Mask ---
 def get_skyline_from_mask(mask_image_path):
     """
     Finds the skyline by reading the first non-white pixel in each column of a mask image.
@@ -178,23 +177,15 @@ class HookScene_End(Scene):
             manim_y = (FRAME_HEIGHT / 2) - (py / img_height) * FRAME_HEIGHT
             traced_manim_points.append(np.array([manim_x, manim_y, 0]))
 
-        np.random.seed(123) # Seed for reproducibility
-
-        # Simplify the traced points to create a "base shape" for the fractal
-        # The number 20 here controls how closely it follows the original. Higher = less accurate but more "fractal".
+        np.random.seed(42)
         base_points_for_fractal = traced_manim_points[::20] 
 
-        # Now, build ONE high-resolution fractal from this base shape
-        # 7 iterations gives plenty of detail for zooming.
-        # 0.5 is a good roughness value.
-        high_res_fractal_points = add_fractal_detail_recursive(base_points_for_fractal, 0.5, 12)
+        high_res_fractal_points = add_fractal_detail_recursive(base_points_for_fractal, 0.5, 8)
         
         skyline = VMobject(stroke_color=WHITE)
         skyline.set_points_as_corners(high_res_fractal_points)
-        # We manually set the stroke width to be adaptive
         skyline.add_updater(lambda m: m.set_stroke(width=2.5 * self.camera.frame.get_width() / FRAME_WIDTH))
 
-        # Animate the creation of this single, definitive fractal line
         self.play(
             FadeOut(background),
             ShowCreation(skyline),
@@ -206,14 +197,49 @@ class HookScene_End(Scene):
         # PART 2: The Zoom
         # ==========================================================
         
-        # Define a point on our line to zoom into
         zoom_point = skyline.point_from_proportion(0.7) 
 
-        # Execute the zoom. The updater will handle the stroke width.
-        # Because we generated a high-res line, the detail will be there.
         self.play(
-            self.camera.frame.animate.scale(0.01).move_to(zoom_point),
-            run_time=8,
+            self.camera.frame.animate.scale(0.1).move_to(zoom_point),
+            run_time=5,
             rate_func=linear
         )
         self.wait(2)
+
+        scale_factor = self.camera.frame.get_width() / FRAME_WIDTH
+
+        self.play(skyline.animate.shift(DOWN * scale_factor))
+
+        camera_center = self.camera.frame.get_center()
+        fractal_text = Text("Fractal Concepts in Surface Growth", font_size=36, font="Times New Roman").scale(scale_factor).move_to(camera_center + UP * scale_factor)
+
+
+        frame = self.camera.frame
+        center = frame.get_center()
+        height = frame.get_height()
+        width = frame.get_width()
+
+        bottom_left_corner = center + (LEFT * width / 2) + (10*DOWN * height / 2)
+        bottom_right_corner = center + (RIGHT * width / 2) + (10*DOWN * height / 2)
+
+        skyline_points = skyline.get_points()
+
+        polygon_points = list(skyline_points)
+        polygon_points.append(bottom_right_corner)
+        polygon_points.append(bottom_left_corner)
+        
+        fill_area = Polygon(
+            *polygon_points,
+            stroke_width=0,
+            fill_color="#7a787b",
+            fill_opacity=0.8
+        )
+
+        self.add(fill_area)
+        self.add(skyline, fractal_text)
+        
+        self.play(Write(fractal_text), 
+                  FadeIn(fill_area))
+        self.wait(1)
+        self.play(self.camera.frame.animate.shift(DOWN), run_time=2)
+        
