@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 
 Image.MAX_IMAGE_PIXELS = None
-
+manim_config.background = BLACK
 class HookScene3D(ThreeDScene):
     def construct(self):
         # --- Resize Earth Texture (if needed) ---
@@ -187,7 +187,7 @@ class HookScene_End(Scene):
         # Now, build ONE high-resolution fractal from this base shape
         # 7 iterations gives plenty of detail for zooming.
         # 0.5 is a good roughness value.
-        high_res_fractal_points = add_fractal_detail_recursive(base_points_for_fractal, 0.5, 7)
+        high_res_fractal_points = add_fractal_detail_recursive(base_points_for_fractal, 0.5, 12)
         
         skyline = VMobject(stroke_color=WHITE)
         skyline.set_points_as_corners(high_res_fractal_points)

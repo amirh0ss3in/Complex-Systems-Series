@@ -16,23 +16,4 @@
 
 > The closer we get... the more detail appears. It doesn't flatten out. New peaks and valleys emerge where moments ago there was just a suggestion of a curve. Every small piece of this line seems to contain the same essential character, the same ruggedness, as the entire mountain range.
 
-> This mind-bending property—of having intricate, repeating structure at every level of magnification—is the signature of a mathematical object called a **fractal**. But I'm getting ahead of myself.
-
-**[00:47 - 00:54]**
-**VISUAL:** The camera dramatically pulls all the way back out, revealing the full mountain profile again. Then, in quick succession, the line smoothly transforms into other equally rugged fractal lines: first, a plot of a stock market fluctuation, then the jagged boundary of a coffee stain.
-**NARRATION:**
-> And this fractal geometry isn't just a mathematical curiosity. It's a language nature uses to write its laws. From the fluctuations of financial markets... to the growth of a bacterial colony... to the way a coffee stain spreads on paper. They all speak this language of roughness.
-
-**(Music becomes more focused and anticipatory.)**
-
-**[00:54 - 01:00]**
-**VISUAL:** The final line (the coffee stain) holds for a moment, then fades away, leaving the screen black.
-**NARRATION:**
-> So if so many different things produce these fractal interfaces, it suggests a deep, underlying connection. A universal rulebook for growth. Our goal will be to read that rulebook. To learn how we can put a number on a shape that seems infinitely complex. And to do *that*, we first need to understand the simple rules that can build this complexity from nothing.
-
-**[01:00]**
-**VISUAL:** A simple 2D grid appears on the black screen. A title card for the series could appear here.
-**NARRATION:**
-> We need to build our own mountain... one particle at a time.
-
-**(Music concludes with a strong, definitive chord, perfectly setting the stage for Episode 2: Scaling Concepts.)**
+> So, we can already draw one conclusion: surfaces can be smooth, such as the Himalayas viewed from space, but the same surface can also be rough, such as the same mountains viewed from earth.
