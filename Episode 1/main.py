@@ -149,6 +149,7 @@ def add_fractal_detail_recursive(points, roughness, max_iterations):
     return add_fractal_detail_recursive(new_points, roughness, max_iterations - 1)
 
 
+
 class HookScene_End(Scene):
     def construct(self):
         # ==========================================================
@@ -163,7 +164,8 @@ class HookScene_End(Scene):
             self.add(background)
         except Exception as e:
             print(f"Error loading background image: {e}")
-            self.add(Text("Error: Background image not found!", color=RED))
+            # Ensure the placeholder text is visible
+            self.add(Text("Error: Background image not found!", color=RED).set_z_index(10))
             return
 
         pixel_points, img_width, img_height = get_skyline_from_mask(mask_image_path)
@@ -214,14 +216,56 @@ class HookScene_End(Scene):
         fractal_text = Text("Self-Affine", font_size=38, font="Times New Roman").scale(scale_factor).move_to(camera_center + UP * scale_factor)
         fractal_text_2 = Text("This is the essence of roughness!", font_size=36, font="Times New Roman").scale(scale_factor).move_to(camera_center + UP * scale_factor)
 
+        self.add(skyline, fractal_text)
+        self.play(Write(fractal_text))
+        self.wait(1)
+
+        # ==========================================================
+        # PART 3: DEFINITION BOX (NEWLY ADDED CODE)
+        # ==========================================================
+        
+        # 1. Create text components for the definition
+        word = Text("affine", font="Times New Roman", weight=BOLD, font_size=28)
+        pos = Text("(adj.)", font="Times New Roman", font_size=28).next_to(word, RIGHT, buff=0.2)
+        definition_text = Text(
+            "preserving points, straight lines, and planes.", 
+            font="Times New Roman", 
+            font_size=24
+        ).next_to(word, DOWN, buff=0.2, aligned_edge=LEFT)
+        
+        # 2. Group text and create a surrounding box
+        text_group = VGroup(word, pos, definition_text)
+        box = RoundedRectangle(
+            corner_radius=0.1,
+            stroke_color=WHITE,
+            stroke_width=2,
+            fill_color=BLACK,
+            fill_opacity=0.7
+        ).surround(text_group, buff=0.3)
+
+        # 3. Group the box and text, then scale and position it relative to the camera view
+        definition_box = VGroup(box, text_group)
+        definition_box.scale(scale_factor*0.7)
+        definition_box.next_to(fractal_text, RIGHT, buff=scale_factor * 0.5)
+
+        # 4. Animate the definition box
+        self.play(FadeIn(definition_box, shift=RIGHT * 0.2 * scale_factor))
+        self.wait(5) # Let the audience read the definition
+        self.play(FadeOut(definition_box, shift=LEFT * 0.2 * scale_factor))
+        self.wait(1)
+
+        # ==========================================================
+        # PART 4: Fill the Mountain and Pan Down
+        # ==========================================================
 
         frame = self.camera.frame
         center = frame.get_center()
         height = frame.get_height()
         width = frame.get_width()
 
-        bottom_left_corner = center + (LEFT * width / 2) + (10*DOWN * height / 2)
-        bottom_right_corner = center + (RIGHT * width / 2) + (10*DOWN * height / 2)
+        # Extend the bottom corners far down to ensure the fill covers the screen
+        bottom_left_corner = center + (LEFT * width / 2) + (10 * DOWN * height / 2)
+        bottom_right_corner = center + (RIGHT * width / 2) + (10 * DOWN * height / 2)
 
         skyline_points = skyline.get_points()
 
@@ -235,12 +279,11 @@ class HookScene_End(Scene):
             fill_color="#7a787b",
             fill_opacity=0.8
         )
-
-        self.add(skyline, fractal_text)
-        self.play(Write(fractal_text))
-        self.wait(8)
-        self.play(Transform(fractal_text, fractal_text_2), 
-                  FadeIn(fill_area))
+        
+        self.play(
+            Transform(fractal_text, fractal_text_2), 
+            FadeIn(fill_area)
+        )
         self.wait(1)
         self.play(self.camera.frame.animate.shift(DOWN), run_time=2)
 
