@@ -284,7 +284,7 @@ class HookScene_End(Scene):
             Transform(fractal_text, fractal_text_2), 
             FadeIn(fill_area)
         )
-        self.wait(1)
+        self.wait(2)
         self.play(self.camera.frame.animate.shift(DOWN), run_time=2)
 
 
