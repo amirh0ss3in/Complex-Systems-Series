@@ -46,10 +46,10 @@ class HookScene3D(ThreeDScene):
         frame.set_euler_angles(theta=10 * DEGREES, phi=80 * DEGREES)
         self.add(skybox, earth)
         earth.add_updater(lambda m, dt: m.rotate(0.05 * dt, axis=UP))
-        self.wait(2)
+        self.wait(9)
         
         # --- Animations ---
-        self.play(frame.animate.set_height(2.5).move_to(RIGHT * 1.5 + OUT * 0.5).increment_theta(-30 * DEGREES), run_time=6)
+        self.play(frame.animate.set_height(2.5).move_to(RIGHT * 1.25 + OUT * 0.2).increment_theta(-30 * DEGREES), run_time=6)
         earth.clear_updaters()
         self.play(frame.animate.set_height(3.5).move_to(RIGHT * 10).increment_theta(-50 * DEGREES).increment_gamma(-70 * DEGREES).increment_phi(10 * DEGREES), run_time=4, rate_func=smooth)
         self.wait(1)
@@ -201,7 +201,7 @@ class HookScene_End(Scene):
 
         self.play(
             self.camera.frame.animate.scale(0.1).move_to(zoom_point),
-            run_time=5,
+            run_time=10,
             rate_func=linear
         )
         self.wait(2)
@@ -211,7 +211,8 @@ class HookScene_End(Scene):
         self.play(skyline.animate.shift(DOWN * scale_factor))
 
         camera_center = self.camera.frame.get_center()
-        fractal_text = Text("Fractal Concepts in Surface Growth", font_size=36, font="Times New Roman").scale(scale_factor).move_to(camera_center + UP * scale_factor)
+        fractal_text = Text("Self-Affine", font_size=38, font="Times New Roman").scale(scale_factor).move_to(camera_center + UP * scale_factor)
+        fractal_text_2 = Text("This is the essence of roughness!", font_size=36, font="Times New Roman").scale(scale_factor).move_to(camera_center + UP * scale_factor)
 
 
         frame = self.camera.frame
@@ -235,11 +236,129 @@ class HookScene_End(Scene):
             fill_opacity=0.8
         )
 
-        self.add(fill_area)
         self.add(skyline, fractal_text)
-        
-        self.play(Write(fractal_text), 
+        self.play(Write(fractal_text))
+        self.wait(8)
+        self.play(Transform(fractal_text, fractal_text_2), 
                   FadeIn(fill_area))
         self.wait(1)
         self.play(self.camera.frame.animate.shift(DOWN), run_time=2)
+
+
+class MandelBrot(Scene):
+    def construct(self):
+        img = ImageMobject("assets/benoit_mandelbrot.jpg", height=5)
+        name = Text("Benoit Mandelbrot", font_size=36)
+        dates = Text("20 Nov 1924 – 14 Oct 2010", font_size=28)
+
+        # Positioning
+        name.next_to(img, DOWN)
+        dates.next_to(name, DOWN, buff=0.2)
+
+        # Animations
+        self.play(FadeIn(img))
+        self.play(img.animate.shift(0.5*UP)) 
+        self.play(Write(name), Write(dates))
+        self.wait(2)
+
+class SubscribeButton(Scene):
+    """
+    A Manim scene that animates a cursor moving to and clicking a subscribe button.
+    The button then changes state to "Subscribed".
+
+    This scene requires two SVG files in the same directory:
+    1. bell.svg - The notification bell icon.
+    2. cursor.svg - The hand pointer icon.
+    """
+    def construct(self):
+        # --- Configuration ---
+        button_red = "#FF0000"
+        subscribed_gray = "#E0E0E0"
+        shadow_gray = "#808080"
+        button_width = 6.0
+        button_height = 1.7
+        corner_radius = 0.4
+        shadow_offset = 0.08
+        click_depth = 0.08
+
+        # --- Create "Subscribe" State Objects ---
+        # Button shadow
+        button_shadow = RoundedRectangle(
+            width=button_width, height=button_height, corner_radius=corner_radius,
+            color=shadow_gray, fill_opacity=0.5, stroke_width=0
+        ).shift(DOWN * shadow_offset)
+
+        # Main red button shape
+        button_rect = RoundedRectangle(
+            width=button_width, height=button_height, corner_radius=corner_radius,
+            color=button_red, fill_opacity=1, stroke_width=0
+        )
+
+        # "SUBSCRIBE" text
+        subscribe_text = Text("SUBSCRIBE", font="sans-serif", weight=BOLD, color=WHITE).scale(0.9)
         
+        # Bell icon
+        bell_icon = SVGMobject("assets/bell.svg").set_color(WHITE).scale(0.35)
+        
+        # Group text and bell
+        button_content = VGroup(subscribe_text, bell_icon).arrange(RIGHT, buff=0.6).move_to(button_rect)
+        
+        # Group all button elements for the initial state
+        subscribe_button = VGroup(button_shadow, button_rect, button_content)
+
+        # --- Create "Subscribed" State Objects ---
+        subscribed_rect = button_rect.copy().set_color(subscribed_gray)
+        subscribed_text = Text("SUBSCRIBED", font="sans-serif", weight=BOLD, color=BLACK).scale(0.8)
+        subscribed_bell = bell_icon.copy().set_color(BLACK)
+        subscribed_content = VGroup(subscribed_text, subscribed_bell).arrange(RIGHT, buff=0.4).move_to(subscribed_rect)
+
+        # --- Create Cursor ---
+        cursor = SVGMobject("assets/cursor.svg").set_color(WHITE).set_stroke(color=BLACK, width=2).scale(0.45).rotate(15*DEGREES)
+        cursor_shadow = cursor.copy().set_fill(shadow_gray, opacity=0.5).set_stroke(width=0)
+        cursor_shadow.shift(DOWN * shadow_offset + RIGHT * shadow_offset)
+        cursor_group = VGroup(cursor_shadow, cursor)
+        
+        # Set initial positions
+        subscribe_button.move_to(ORIGIN)
+        click_position = button_content.get_center() + DOWN * 0.4
+        cursor_group.move_to(click_position + DOWN * 2 + RIGHT * 2)
+
+        # --- Animation Sequence ---
+        self.add(subscribe_button, cursor_group)
+        self.wait(0.5)
+
+        # 1. Move cursor to button
+        self.play(cursor_group.animate.move_to(click_position), run_time=1.2, rate_func=smooth)
+        self.wait(0.2)
+
+        # 2. Animate the "click down" action
+        self.play(
+            subscribe_button.animate.shift(DOWN * click_depth),
+            cursor_group.animate.shift(DOWN * click_depth),
+            run_time=0.1
+        )
+
+        # 3. Animate the state change while button is pressed
+        self.play(
+            Transform(button_rect, subscribed_rect),
+            FadeOut(subscribe_text),
+            FadeOut(bell_icon),
+            FadeIn(subscribed_text),
+            FadeIn(subscribed_bell),
+            run_time=0.15
+        )
+
+        # Group final button state
+        subscribed_button_final = VGroup(button_shadow, button_rect, subscribed_content)
+
+        # 4. Animate the "click up" (release) action
+        self.play(
+            subscribed_button_final.animate.shift(UP * click_depth),
+            cursor_group.animate.shift(UP * click_depth),
+            run_time=0.1
+        )
+        self.wait(0.5)
+
+        # 5. Move cursor away
+        self.play(cursor_group.animate.shift(DOWN * 1.5 + RIGHT * 2.5), run_time=1.5, rate_func=smooth)
+        self.wait(1)
