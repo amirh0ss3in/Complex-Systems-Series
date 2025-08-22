@@ -1,4 +1,4 @@
-### Episode 1 Intro – *"The Hidden Rules of Roughness"*
+# Fractal Concepts in Surface Growth: A Complex System Series (Ep. 0)
 
 > Most of our lives take place on a surface. From a great distance, the largest surface we know—our planet—appears almost perfectly smooth.
 

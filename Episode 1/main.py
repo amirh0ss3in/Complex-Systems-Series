@@ -405,3 +405,50 @@ class SubscribeButton(Scene):
         # 5. Move cursor away
         self.play(cursor_group.animate.shift(DOWN * 1.5 + RIGHT * 2.5), run_time=1.5, rate_func=smooth)
         self.wait(1)
+    
+
+class Thumbnail(Scene):
+    def construct(self):
+        # ==========================================================
+        # PART 1: Trace the "Real" Mountain 
+        # ==========================================================
+        background_image_path = "videos/HookScene3D.png" 
+        mask_image_path = "assets/HookScene3D_edge.png"
+
+        try:
+            background = ImageMobject(background_image_path)
+            background.set_height(FRAME_HEIGHT)
+            self.add(background)
+        except Exception as e:
+            print(f"Error loading background image: {e}")
+            # Ensure the placeholder text is visible
+            self.add(Text("Error: Background image not found!", color=RED).set_z_index(10))
+            return
+
+        pixel_points, img_width, img_height = get_skyline_from_mask(mask_image_path)
+        if not pixel_points:
+            print("Failed to get skyline from mask.")
+            return
+
+        traced_manim_points = []
+        for px, py in pixel_points:
+            manim_x = (px / img_width) * FRAME_WIDTH - (FRAME_WIDTH / 2)
+            manim_y = (FRAME_HEIGHT / 2) - (py / img_height) * FRAME_HEIGHT
+            traced_manim_points.append(np.array([manim_x, manim_y, 0]))
+
+        np.random.seed(42)
+        base_points_for_fractal = traced_manim_points[::20] 
+
+        high_res_fractal_points = add_fractal_detail_recursive(base_points_for_fractal, 0.5, 8)
+        
+        skyline = VMobject(stroke_color=WHITE)
+        skyline.set_points_as_corners(high_res_fractal_points)
+        skyline.add_updater(lambda m: m.set_stroke(width=2.5 * self.camera.frame.get_width() / FRAME_WIDTH))
+        self.add(skyline)
+        title2 = (
+            Text("Hidden Rules of Roughness.", font_size=90, font="Times New Roman")
+            .move_to(1.1*UP)
+            .set_color("#FFD700")          # Fill color
+            .set_stroke(color=BLACK, width=1)  # Outline/stroke
+        )
+        self.add(title2)
